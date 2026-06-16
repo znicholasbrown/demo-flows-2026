@@ -2,7 +2,9 @@
 the_notary — a Prefect flow that pulls records, asks a human to certify one,
 and then transforms the approved record.
 
-Tests pause_flow_run / wait_for_input with a boolean-checkbox approval schema.
+Tests suspend_flow_run / wait_for_input with a boolean-checkbox approval schema.
+Uses the cacheable-suspend pattern: tasks before the suspend are cached on INPUTS
+so they are replayed rather than re-executed when the flow is rescheduled on resume.
 """
 
 import asyncio
@@ -10,8 +12,10 @@ import random
 from datetime import datetime, timezone
 
 from prefect import flow, get_run_logger, task
-from prefect.flow_runs import pause_flow_run
+from prefect.cache_policies import INPUTS
+from prefect.flow_runs import suspend_flow_run
 from prefect.input import RunInput
+from prefect.runtime import flow_run
 from pydantic import Field
 
 
@@ -92,7 +96,7 @@ _FAKE_RECORDS = [
 # Tasks
 # ---------------------------------------------------------------------------
 
-@task(name="fetch-records", description="Simulate a SELECT from the deals table")
+@task(name="fetch-records", cache_policy=INPUTS, description="Simulate a SELECT from the deals table")
 def fetch_records(limit: int = 5) -> list[dict]:
     logger = get_run_logger()
     logger.info("Querying database for pending_review records (limit=%d)…", limit)
@@ -103,7 +107,7 @@ def fetch_records(limit: int = 5) -> list[dict]:
     return records
 
 
-@task(name="select-record", description="Pick the record that needs human sign-off")
+@task(name="select-record", cache_policy=INPUTS, description="Pick the record that needs human sign-off")
 def select_record(records: list[dict], record_id: str | None = None) -> dict:
     logger = get_run_logger()
 
@@ -181,12 +185,15 @@ async def the_notary(
     # ── Task 2: select the one that needs a human eye ───────────────────────
     record = select_record(records, record_id=record_id)
 
-    # ── Pause: ask a human to certify the record ────────────────────────────
-    logger.info("Pausing for human approval of record %s…", record["id"])
+    # ── Suspend: ask a human to certify the record ─────────────────────────
+    # suspend_flow_run releases infrastructure immediately; the flow is
+    # rescheduled from the top when input is submitted.  The key prevents the
+    # suspend from firing a second time on that re-run.
+    logger.info("Suspending for human approval of record %s…", record["id"])
 
     record_summary = "\n".join(f"  {k}: {v}" for k, v in record.items())
 
-    approval: RecordApproval = await pause_flow_run(
+    approval: RecordApproval = await suspend_flow_run(
         wait_for_input=RecordApproval.with_initial_data(
             confirmed=False,
             description=(
@@ -197,6 +204,7 @@ async def the_notary(
                 f"> **Note:** Leaving the checkbox unchecked will abort the flow."
             ),
         ),
+        key=f"notary-approval-{flow_run.id}",
     )
 
     if not approval.confirmed:
