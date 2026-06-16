@@ -6,9 +6,8 @@ build: null
 push: null
 
 pull:
-  - prefect.deployments.steps.git_clone:
-      repository: "{{ prefect.variables.flows_repo_url }}"
-      branch: main
+  - prefect.deployments.steps.set_working_directory:
+      directory: /Users/nicholas/projects/flows
 
 deployments:
   - name: the-notary
@@ -20,8 +19,5 @@ deployments:
       record_id: null
       fetch_limit: 5
     work_pool:
-      name: managed
-      job_variables:
-        pip_packages:
-          - "prefect>=3.7,<4"
+      name: nicholas
     schedules: []
