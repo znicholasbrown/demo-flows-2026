@@ -1,0 +1,27 @@
+name: the-notary
+prefect-version: 3.7.4
+
+build: null
+
+push: null
+
+pull:
+  - prefect.deployments.steps.git_clone:
+      repository: "{{ prefect.variables.flows_repo_url }}"
+      branch: main
+
+deployments:
+  - name: the-notary
+    description: >
+      Pulls pending records from the DB, surfaces one for human certification,
+      then transforms the approved record and returns it.
+    entrypoint: the_notary.py:the_notary
+    parameters:
+      record_id: null
+      fetch_limit: 5
+    work_pool:
+      name: managed
+      job_variables:
+        pip_packages:
+          - "prefect>=3.7,<4"
+    schedules: []

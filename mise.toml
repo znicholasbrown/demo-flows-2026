@@ -1,0 +1,21 @@
+[tools]
+python = "3.12"
+
+[env]
+_.python.venv = { path = ".venv", create = true }
+
+[tasks.install]
+run = "python -m venv .venv && .venv/bin/pip install -e ."
+description = "Create .venv and install project dependencies"
+
+[tasks.serve]
+run = "prefect server start"
+description = "Start the local Prefect server"
+
+[tasks.run]
+run = ".venv/bin/python the_notary.py"
+description = "Run the notary flow locally (no deployment)"
+
+[tasks.deploy]
+run = "prefect deploy --all"
+description = "Deploy all flows defined in prefect.yaml"
