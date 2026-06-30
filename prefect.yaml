@@ -21,3 +21,15 @@ deployments:
     work_pool:
       name: nicholas
     schedules: []
+
+  - name: the-chameleon
+    description: >
+      Sleeps briefly, then blends into whatever final state you ask for —
+      returns a custom State whose type and name come from its parameters.
+    entrypoint: the_chameleon.py:the_chameleon
+    parameters:
+      state_type: COMPLETED
+      state_name: Finished
+    work_pool:
+      name: nicholas
+    schedules: []
