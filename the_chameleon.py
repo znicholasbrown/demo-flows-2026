@@ -28,34 +28,26 @@ NAP_SECONDS = 5
     ),
 )
 def the_chameleon(
-    state_type: str = "COMPLETED",
+    state_type: StateType = StateType.COMPLETED,
     state_name: str = "Finished",
 ) -> State:
     """
     Parameters
     ----------
     state_type:
-        The terminal state type to assume, e.g. COMPLETED, FAILED, CANCELLED.
-        Case-insensitive; must be one of Prefect's StateType members.
+        The terminal state type to assume, drawn from Prefect's StateType
+        enum (COMPLETED, FAILED, CANCELLED, …). Renders as a dropdown in the UI.
     state_name:
         The custom display name for the state (defaults to "Finished", a
         custom name for an otherwise-Completed state).
     """
     logger = get_run_logger()
 
-    try:
-        resolved_type = StateType[state_type.upper()]
-    except KeyError:
-        valid = ", ".join(s.name for s in StateType)
-        raise ValueError(
-            f"Unknown state_type {state_type!r}. Expected one of: {valid}."
-        )
-
-    logger.info("Blending in… settling into %s in %d seconds.", resolved_type.name, NAP_SECONDS)
+    logger.info("Blending in… settling into %s in %d seconds.", state_type.name, NAP_SECONDS)
     time.sleep(NAP_SECONDS)
 
-    logger.info("Done. Returning custom state %r (type=%s).", state_name, resolved_type.name)
-    return State(type=resolved_type, name=state_name)
+    logger.info("Done. Returning custom state %r (type=%s).", state_name, state_type.name)
+    return State(type=state_type, name=state_name)
 
 
 # ---------------------------------------------------------------------------

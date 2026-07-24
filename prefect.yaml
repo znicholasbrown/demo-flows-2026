@@ -33,3 +33,15 @@ deployments:
     work_pool:
       name: nicholas
     schedules: []
+
+  - name: the-informant
+    description: >
+      Opens a case file, pauses to take an anonymous tip via a 12-field intake
+      form that exercises every input type in the schemas service (only the
+      observation date is required), then files whatever information comes
+      back.
+    entrypoint: the_informant.py:the_informant
+    parameters: {}
+    work_pool:
+      name: nicholas
+    schedules: []
