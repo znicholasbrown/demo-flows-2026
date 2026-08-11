@@ -14,6 +14,12 @@ two levels the API offers:
     * markdown  — the full field diary (a deliberately LONG document)
     * image     — the field photograph of the prize find
     * link      — the radiocarbon lab's methodology page
+    * ????????  — ``the-cursed-tablet``: a corrupted find filed under the
+                  same key every season, but as a DIFFERENT artifact type
+                  with a different value each time. Pin its type with the
+                  ``corrupted_artifact_type`` parameter to test one
+                  rendering; leave it None and the curse picks. Its version
+                  history in the UI flips between all five types.
 
 - Flow-run artifacts (created in the flow body):
     * progress  — season progress, updated as each phase completes
@@ -200,6 +206,33 @@ MISSING_PIECES = [
     "a third of the shoulder",
     "one handle stub",
 ]
+
+# --- the cursed tablet -----------------------------------------------------
+
+CURSED_KEY = "the-cursed-tablet"
+CURSED_TYPES = ("link", "markdown", "table", "progress", "image")
+CURSE_TABLET_URL = "https://en.wikipedia.org/wiki/Curse_tablet"
+CURSED_GLYPHS = "𒀭𒂗𒆠𒈗𒁹𐤀𐤁𐤂𐤃𐤄𐊀𐊁𐊂ᚠᚢᚦᚨ"
+CURSED_OMENS = (
+    "the harvest belongs to the one who buried this",
+    "whoever reads the third line reads it aloud",
+    "the river will take back what the kiln has kept",
+    "count the sherds again; one has been added",
+    "the name of the city is not the name of the city",
+    "this line was blank yesterday",
+)
+CURSED_EPIGRAPHERS = (
+    "Dr. Halloway",
+    "Prof. Ibsen",
+    "M. Okonkwo",
+    "the registrar, reluctantly",
+    "a visiting scholar who left early",
+)
+CURSED_LINK_TEXTS = (
+    "Do not read the third line aloud (lab reference)",
+    "Comparanda: tablets that bite back (lab reference)",
+    "Handling guidance for inscribed objects (lab reference)",
+)
 
 
 def _imagine(target, n, instructions, fallback, logger, use_marvin, model):
@@ -737,6 +770,95 @@ def transcribe_field_diary(
 
 
 # ---------------------------------------------------------------------------
+# Phase 5.5 — the cursed tablet (task-run artifact of a DIFFERENT TYPE each run)
+# ---------------------------------------------------------------------------
+
+@task
+def unearth_the_cursed_tablet(manifestation: str | None) -> str:
+    """File the find that will not stay what it is. Same key every season;
+    a different artifact type with a different value every time."""
+    logger = get_run_logger()
+
+    manifestation = manifestation or random.choice(CURSED_TYPES)
+    glyphs = "".join(random.choices(CURSED_GLYPHS, k=14))
+    omen = random.choice(CURSED_OMENS)
+    description = (
+        "Found beneath the threshold on the last day, filed under protest. "
+        f"The registrar has recorded this object as a **{manifestation}** "
+        "artifact this season; it was something else last season and it "
+        "will be something else next season. Check the key's version "
+        "history and keep your voice down."
+    )
+
+    time.sleep(0.5)
+    if manifestation == "markdown":
+        create_markdown_artifact(
+            key=CURSED_KEY,
+            markdown=(
+                f"# Reading attempt {random.randint(3, 400)}\n\n"
+                f"```text\n{glyphs}\n```\n\n"
+                f"Provisional translation: *\"{omen}.\"*\n\n"
+                "The photograph taken this morning does not match the "
+                "object on the bench, and yesterday's transcription no "
+                "longer matches either. Filed as is."
+            ),
+            description=description,
+        )
+    elif manifestation == "table":
+        create_table_artifact(
+            key=CURSED_KEY,
+            table=[
+                {
+                    "attempt": i + 1,
+                    "epigrapher": random.choice(CURSED_EPIGRAPHERS),
+                    "reading": "".join(random.choices(CURSED_GLYPHS, k=8)),
+                    "translation": random.choice(CURSED_OMENS),
+                    "confidence": f"{random.randint(1, 60)}%",
+                }
+                for i in range(random.randint(3, 6))
+            ],
+            description=description,
+        )
+    elif manifestation == "progress":
+        progress_id = create_progress_artifact(
+            key=CURSED_KEY,
+            progress=round(random.uniform(5.0, 90.0), 1),
+            description=description + " Decipherment moves in both directions.",
+        )
+        for _ in range(3):
+            time.sleep(0.3)
+            update_progress_artifact(
+                artifact_id=progress_id,
+                progress=round(random.uniform(5.0, 95.0), 1),
+            )
+    elif manifestation == "link":
+        create_link_artifact(
+            key=CURSED_KEY,
+            link=CURSE_TABLET_URL,
+            link_text=random.choice(CURSED_LINK_TEXTS),
+            description=description,
+        )
+    elif manifestation == "image":
+        seed_token = "".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=8))
+        create_image_artifact(
+            key=CURSED_KEY,
+            image_url=f"https://picsum.photos/seed/{seed_token}/800/600",
+            description=description + " No two photographs of it agree.",
+        )
+    else:
+        raise ValueError(
+            f"Unknown manifestation {manifestation!r}; "
+            f"expected one of {CURSED_TYPES}."
+        )
+
+    logger.warning(
+        "The cursed tablet manifested as a %s artifact this season.",
+        manifestation,
+    )
+    return manifestation
+
+
+# ---------------------------------------------------------------------------
 # The flow — one field season, flow-run artifacts filed along the way
 # ---------------------------------------------------------------------------
 
@@ -756,6 +878,9 @@ def the_archeologist(
     diary_days: int = 30,
     use_marvin: bool = True,
     marvin_model: str | None = DEFAULT_MARVIN_MODEL,
+    corrupted_artifact_type: (
+        Literal["link", "markdown", "table", "progress", "image"] | None
+    ) = None,
     seed: int | None = None,
 ) -> dict:
     """
@@ -774,6 +899,10 @@ def the_archeologist(
         default, served by a local Ollama), ``openai:gpt-4o``, or
         ``anthropic:claude-sonnet-4-5``. Hosted providers need their API
         key in the environment. None uses Marvin's own default.
+    corrupted_artifact_type:
+        Pin the cursed tablet's manifestation for testing: one of link,
+        markdown, table, progress, or image. Defaults to None — the curse
+        picks a different type each season.
     seed:
         Seed for the random parts of the season, for reproducible runs.
         Defaults to None (every season is different).
@@ -865,6 +994,10 @@ def the_archeologist(
     )[:3]
     transcribe_field_diary(dossier, highlights, diary_days, use_marvin, marvin_model)
 
+    # Phase 5.5 — the find nobody wants to catalog.
+    manifestation = unearth_the_cursed_tablet(corrupted_artifact_type)
+    update_progress_artifact(artifact_id=season_progress_id, progress=90.0)
+
     # Phase 6 — publication. Flow-run artifacts: report and accession record.
     periods = sorted({find["period"] for find in all_finds})
     report = f"""# End-of-season report — {dossier.site_name}, {season}
@@ -881,6 +1014,7 @@ def the_archeologist(
 | Periods represented | {len(periods)} |
 | Prize find | {prize['find_id']} ({prize['object'].lower()}) |
 | Pottery reconstruction | stalled at {stall}% |
+| The cursed tablet | manifested as a {manifestation} artifact |
 
 ## Headline result
 
@@ -927,6 +1061,7 @@ results are pending.
         "finds": len(all_finds),
         "prize_find": prize["find_id"],
         "pottery_stalled_at": stall,
+        "cursed_manifestation": manifestation,
     }
 
 
