@@ -5,6 +5,10 @@ description = "Human-in-the-loop record approval flow — pause, review, transfo
 requires-python = ">=3.12"
 dependencies = [
     "prefect>=3.7,<4",
+    "marvin>=3",
+    # marvin 3.2.x breaks against pydantic-ai >=1.95 (ModelResponsePartsManager
+    # signature change) and 2.x (Usage removed)
+    "pydantic-ai>=1.9,<1.95",
 ]
 
 [build-system]
