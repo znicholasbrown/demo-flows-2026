@@ -45,3 +45,18 @@ deployments:
     work_pool:
       name: nicholas
     schedules: []
+
+  - name: the-archeologist
+    description: >
+      Runs one excavation season at a fictional tell and files every Prefect
+      artifact type along the way — link, markdown, progress, table, and
+      image — as a mix of task-run and flow-run artifacts, with description
+      lengths from two words to multi-paragraph markdown, one wall-of-text
+      diary, and a progress artifact that never reaches 100%.
+    entrypoint: the_archeologist.py:the_archeologist
+    parameters:
+      grid_squares: 8
+      diary_days: 30
+    work_pool:
+      name: nicholas
+    schedules: []

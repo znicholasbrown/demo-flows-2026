@@ -92,8 +92,8 @@ async def the_matryoshka(sleep_seconds: int = DEFAULT_SLEEP_SECONDS) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Entrypoint (local dev without a deployment)
+# Entrypoint — serves the top-level flow as a deployment
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    asyncio.run(the_matryoshka())
+    the_matryoshka.serve(name="default")
