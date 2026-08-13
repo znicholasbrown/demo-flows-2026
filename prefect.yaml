@@ -46,6 +46,24 @@ deployments:
       name: nicholas
     schedules: []
 
+  - name: the-town-crier
+    description: >
+      Cries a configurable flood of proclamations across several districts —
+      ASCII banners and box-drawn scrolls, logs at every level from DEBUG to
+      CRITICAL (traceback included), and roughly two custom events per
+      proclamation. Built to generate more than 1,000 log records per run
+      for load-testing log and event ingestion.
+    entrypoint: the_town_crier.py:the_town_crier
+    parameters:
+      districts: 3
+      proclamations_per_district: 60
+      pace_seconds: 0.05
+      include_debug: true
+      seed: null
+    work_pool:
+      name: nicholas
+    schedules: []
+
   - name: the-archeologist
     description: >
       Runs one excavation season at an invented site and files every Prefect
