@@ -64,6 +64,43 @@ deployments:
       name: nicholas
     schedules: []
 
+  - name: the-gatekeeper
+    description: >
+      Walks a visitor through a configurable sequence of human-in-the-loop
+      gates, one per HITL mode — nod (pause, no input), form (RunInput form),
+      password (bare str input), credentials (plain BaseModel form), strict
+      (validation + retry; the watchword is "friend"), patience (short
+      timeout — let it expire to test the failure path), siesta (suspend, no
+      input), linger (stays Running so you can pause/suspend it from
+      outside), and parley (two-way send_input/receive_input; pair with
+      the-courier). Deterministic pause keys let cleared gates replay from
+      their stored inputs after a suspend reschedules the run.
+    entrypoint: the_gatekeeper.py:the_gatekeeper
+    parameters:
+      gates: [nod, form, password, credentials, strict, siesta]
+      pause_timeout_seconds: 3600
+      patience_timeout_seconds: 30
+      linger_seconds: 120
+      parley_timeout_seconds: 120
+    work_pool:
+      name: nicholas
+    schedules: []
+
+  - name: the-courier
+    description: >
+      Delivers messages to a the-gatekeeper run standing at its parley gate
+      (send_input) and waits for each reply (receive_input). Start a
+      gatekeeper run that includes the parley gate, copy the flow run ID it
+      logs, and pass it as gatekeeper_flow_run_id. End the messages with
+      "done" to close the parley politely.
+    entrypoint: the_gatekeeper.py:the_courier
+    parameters:
+      messages: ["hail, gatekeeper", "any news from the wall?", "done"]
+      reply_wait_seconds: 30
+    work_pool:
+      name: nicholas
+    schedules: []
+
   - name: the-archeologist
     description: >
       Runs one excavation season at an invented site and files every Prefect
