@@ -122,3 +122,22 @@ deployments:
     work_pool:
       name: nicholas
     schedules: []
+
+  - name: the-agitator
+    description: >
+      Emits a burst of agitator.crowd.shouted events (1,500 over 60 s by
+      default) to push a fire-on-every-event automation past the account's
+      action rate limit of 1,000 actions per 5 minutes, and waves a
+      bystander event during the burst so a second, quiet automation is
+      disabled as collateral. Pair with the three automations described in
+      the module docstring (Sink, Riot control, Bystander).
+    entrypoint: the_agitator.py:the_agitator
+    parameters:
+      shouts: 1500
+      burst_seconds: 60
+      rallies: 1
+      bystander_waves: 3
+      seed: null
+    work_pool:
+      name: nicholas
+    schedules: []
