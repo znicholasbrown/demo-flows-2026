@@ -1,0 +1,53 @@
+name: the-cartographer
+prefect-version: 3.7.4
+
+build: null
+
+push: null
+
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /Users/nicholas/projects/flows
+
+# Deploy from the repo root so the entrypoints resolve:
+#   prefect deploy --prefect-file the_cartographer/prefect.yaml --all
+deployments:
+  - name: the-cartographer-seed
+    description: >
+      Seeds a workspace with the full asset atlas: 1,000 assets across
+      thirteen realms (s3, sharepoint, salesforce, api, motherduck, azure,
+      gcs, snowflake, sql, bigquery, dbt, powerbi, tableau) with about four
+      upstream edges each, hub sources fanning out to over a hundred
+      downstreams, and chains forty deep. Prefix-stable: raise asset_count
+      to add assets, lower it to re-materialize the ones that exist. Built
+      for CLOUD-4910 catalog load testing.
+    entrypoint: the_cartographer/the_cartographer.py:the_cartographer
+    parameters:
+      asset_count: 1000
+      seed: 4910
+      edge_factor: 4.0
+      subset: 1.0
+      failure_rate: 0.0
+      batch_size: 200
+    work_pool:
+      name: nicholas
+    schedules: []
+
+  - name: the-cartographer-survey
+    description: >
+      Re-materializes a deterministic five percent of the seeded atlas and
+      fails three percent of those on purpose, so the catalog's Active and
+      Inactive tabs, status badges, and activity counts keep changing after
+      the seed. Same seed and asset_count as the-cartographer-seed; never
+      creates new assets.
+    entrypoint: the_cartographer/the_cartographer.py:the_cartographer
+    parameters:
+      asset_count: 1000
+      seed: 4910
+      edge_factor: 4.0
+      subset: 0.05
+      failure_rate: 0.03
+      batch_size: 200
+    work_pool:
+      name: nicholas
+    schedules: []
