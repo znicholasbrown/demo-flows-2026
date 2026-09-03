@@ -5,7 +5,7 @@ python = "3.12"
 _.python.venv = { path = ".venv", create = true }
 
 [tasks.install]
-run = "python -m venv .venv && .venv/bin/pip install -e ."
+run = "python -m venv .venv && .venv/bin/pip install -e .[dev]"
 description = "Create .venv and install project dependencies"
 
 [tasks.serve]
@@ -19,3 +19,11 @@ description = "Run the notary flow locally (no deployment)"
 [tasks.deploy]
 run = "prefect deploy --all"
 description = "Deploy all flows defined in prefect.yaml"
+
+[tasks.test]
+run = ".venv/bin/python -m pytest"
+description = "Run the test suite"
+
+[tasks.chart]
+run = ".venv/bin/python -m the_cartographer.the_cartographer"
+description = "Seed the current workspace with the asset atlas (no deployment; pass --asset-count etc.)"
