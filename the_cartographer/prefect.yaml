@@ -30,7 +30,7 @@ deployments:
       failure_rate: 0.0
       batch_size: 200
     work_pool:
-      name: nicholas
+      name: managed
     schedules: []
 
   - name: the-cartographer-survey
