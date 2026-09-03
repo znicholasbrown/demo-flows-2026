@@ -141,3 +141,18 @@ deployments:
     work_pool:
       name: nicholas
     schedules: []
+
+  - name: the-conservator
+    description: >
+      Pretends to restore archived tables through a Databricks job. Its
+      parameter schema mirrors a customer's flow field for field: six
+      required parameters (one untyped, one a nested job-configuration
+      object with thirty-odd defaulted fields, most nullable) and five
+      untyped optional parameters with string defaults. Does no work; logs
+      which defaults arrived untouched and returns everything it received.
+      Fixture for the run form's default-value display bug.
+    entrypoint: the_conservator.py:the_conservator
+    parameters: {}
+    work_pool:
+      name: nicholas
+    schedules: []
